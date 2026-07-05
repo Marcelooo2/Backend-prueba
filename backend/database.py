@@ -6,7 +6,7 @@ import pymysql
 DB_HOST = 'gateway01.us-east-1.prod.aws.tidbcloud.com'
 DB_PORT = 4000
 DB_USER = '48vN34SyuVsmZoq.root'
-DB_PASSWORD = 'kWXlqgNGbN2MqHKB' 
+DB_PASSWORD = 'KDYU16cuN7FatUV0' 
 DB_NAME = 'deepl_arabica'
 
 def get_db_connection():
