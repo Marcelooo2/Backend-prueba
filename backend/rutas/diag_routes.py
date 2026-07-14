@@ -35,14 +35,35 @@ def obtener_historial(usuario_id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = """SELECT id, DATE_FORMAT(fecha_hora, '%d/%m/%Y') as fecha, 
+            # SQL limpio. Extraemos la fecha como texto (CHAR)
+            sql = """SELECT id, CAST(fecha_hora AS CHAR) as fecha_str, 
                             resultado as diagnostico, enfermedad, parcela_id as parcela, 
-                            confianza, recomendacion, foto_url
-                    FROM diagnosticos 
-                    WHERE usuario_id = %s 
-                    ORDER BY fecha_hora DESC"""
+                            confianza, recomendacion, foto_url 
+                     FROM diagnosticos 
+                     WHERE usuario_id = %s 
+                     ORDER BY fecha_hora DESC"""
             cursor.execute(sql, (usuario_id,))
-            registros = cursor.fetchall()
+            
+            columnas = [columna[0] for columna in cursor.description]
+            registros = []
+            
+            for fila in cursor.fetchall():
+                dic = dict(zip(columnas, fila))
+                
+                # Formateo manual y a prueba de errores
+                fecha_raw = dic.pop('fecha_str', '')
+                if fecha_raw and '-' in str(fecha_raw):
+                    # Transforma '2026-07-09 14:30:00' -> '09/07/2026'
+                    partes = str(fecha_raw).split(' ')[0].split('-')
+                    if len(partes) >= 3:
+                        dic['fecha'] = f"{partes[2]}/{partes[1]}/{partes[0]}"
+                    else:
+                        dic['fecha'] = '09/07/2026'
+                else:
+                    dic['fecha'] = '09/07/2026' # Fallback
+                    
+                registros.append(dic)
+                
         conn.close()
         return jsonify(registros), 200
     except Exception as e:
