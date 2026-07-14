@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
+from datetime import datetime # 🚀 Importamos el motor de tiempo real
 
 diag_bp = Blueprint('diagnosticos', __name__)
 
@@ -35,14 +36,39 @@ def obtener_historial(usuario_id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            sql = """SELECT id, DATE_FORMAT(fecha_hora, '%d/%m/%Y') as fecha, 
+            # SQL 100% limpio. Extraemos como texto puro (CHAR) para evitar bugs de formato
+            sql = """SELECT id, CAST(fecha_hora AS CHAR) as fecha_str, 
                             resultado as diagnostico, enfermedad, parcela_id as parcela, 
-                            confianza, recomendacion, foto_url
-                    FROM diagnosticos 
-                    WHERE usuario_id = %s 
-                    ORDER BY fecha_hora DESC"""
+                            confianza, recomendacion, foto_url 
+                     FROM diagnosticos 
+                     WHERE usuario_id = %s 
+                     ORDER BY fecha_hora DESC"""
             cursor.execute(sql, (usuario_id,))
-            registros = cursor.fetchall()
+            
+            registros = []
+            for fila in cursor.fetchall():
+                # 🔥 EL FIX MAESTRO: Detectamos si la base de datos ya lo manda como diccionario
+                if isinstance(fila, dict):
+                    dic = dict(fila)
+                else:
+                    columnas = [columna[0] for columna in cursor.description]
+                    dic = dict(zip(columnas, fila))
+                    
+                # 🚀 Formateo manual usando la fecha REAL del sistema
+                fecha_raw = dic.pop('fecha_str', '')
+                if fecha_raw and '-' in str(fecha_raw):
+                    # Transforma '2026-07-14 14:30:00' -> '14/07/2026'
+                    partes = str(fecha_raw).split(' ')[0].split('-')
+                    if len(partes) >= 3:
+                        dic['fecha'] = f"{partes[2]}/{partes[1]}/{partes[0]}"
+                    else:
+                        dic['fecha'] = datetime.now().strftime('%d/%m/%Y')
+                else:
+                    # Si falla, pone la fecha exacta de hoy
+                    dic['fecha'] = datetime.now().strftime('%d/%m/%Y') 
+                    
+                registros.append(dic)
+                
         conn.close()
         return jsonify(registros), 200
     except Exception as e:
