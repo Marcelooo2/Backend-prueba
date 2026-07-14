@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
+from datetime import datetime # 🚀 Importamos el motor de tiempo real
 
 diag_bp = Blueprint('diagnosticos', __name__)
 
@@ -50,17 +51,18 @@ def obtener_historial(usuario_id):
             for fila in cursor.fetchall():
                 dic = dict(zip(columnas, fila))
                 
-                # Formateo manual y a prueba de errores
+                # 🚀 Formateo manual usando la fecha REAL del sistema
                 fecha_raw = dic.pop('fecha_str', '')
                 if fecha_raw and '-' in str(fecha_raw):
-                    # Transforma '2026-07-09 14:30:00' -> '09/07/2026'
+                    # Transforma '2026-07-14 14:30:00' -> '14/07/2026'
                     partes = str(fecha_raw).split(' ')[0].split('-')
                     if len(partes) >= 3:
                         dic['fecha'] = f"{partes[2]}/{partes[1]}/{partes[0]}"
                     else:
-                        dic['fecha'] = '09/07/2026'
+                        dic['fecha'] = datetime.now().strftime('%d/%m/%Y')
                 else:
-                    dic['fecha'] = '09/07/2026' # Fallback
+                    # Si falla, pone la fecha exacta de hoy
+                    dic['fecha'] = datetime.now().strftime('%d/%m/%Y') 
                     
                 registros.append(dic)
                 
