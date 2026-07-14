@@ -5,6 +5,7 @@ from flask_cors import CORS
 from rutas.auth_routes import auth_bp
 from rutas.admin_routes import admin_bp
 from rutas.diag_routes import diag_bp
+from rutas.reportes_routes import reportes_bp
 
 app = Flask(__name__)
 
@@ -17,6 +18,7 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(diag_bp, url_prefix='/api/diagnosticos')
+app.register_blueprint(reportes_bp, url_prefix='/api/reportes')
 
 # Endpoint de verificación de salud del sistema
 @app.route('/', methods=['GET'])
