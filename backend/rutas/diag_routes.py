@@ -36,7 +36,7 @@ def obtener_historial(usuario_id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # SQL limpio. Extraemos la fecha como texto (CHAR)
+            # SQL 100% limpio. Extraemos como texto puro (CHAR) para evitar bugs de formato
             sql = """SELECT id, CAST(fecha_hora AS CHAR) as fecha_str, 
                             resultado as diagnostico, enfermedad, parcela_id as parcela, 
                             confianza, recomendacion, foto_url 
@@ -45,12 +45,15 @@ def obtener_historial(usuario_id):
                      ORDER BY fecha_hora DESC"""
             cursor.execute(sql, (usuario_id,))
             
-            columnas = [columna[0] for columna in cursor.description]
             registros = []
-            
             for fila in cursor.fetchall():
-                dic = dict(zip(columnas, fila))
-                
+                # 🔥 EL FIX MAESTRO: Detectamos si la base de datos ya lo manda como diccionario
+                if isinstance(fila, dict):
+                    dic = dict(fila)
+                else:
+                    columnas = [columna[0] for columna in cursor.description]
+                    dic = dict(zip(columnas, fila))
+                    
                 # 🚀 Formateo manual usando la fecha REAL del sistema
                 fecha_raw = dic.pop('fecha_str', '')
                 if fecha_raw and '-' in str(fecha_raw):
